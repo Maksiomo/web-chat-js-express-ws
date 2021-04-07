@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+        <title>Test Chat</title>
+    </head>
+<body>
+        <main>
+            
+            <div id="divMessages" class="message border rounded container">
+     
+            </div>
+            <div class="container">
+                <div id="blockSendMessage" class="row">
+                    <input id="inputMessage" class="form-control col-8 col-sm-9 col-md-8" type="text" placeholder="Введите сообщение">
+                    <button id="btnSend" type="button" class="btn btn-secondary col-4 col-sm-3 col-md-4">Отправить</button>
+                </div>
+            </div>
+            
+        </main>
+                
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+        <script>
+
+            window.onload = function() {
+
+                let chat = document.querySelector("#divMessages")
+                let input = document.querySelector("#inputMessage")
+                let btnSubmit = document.querySelector("#btnSend")                
+
+                const loadHistory = function() {
+
+                    
+
+                    for (let hmsg of chatHistory ) {
+                        addMessage(chatHistory[hmsg].data.author, chatHistory[hmsg].data.text);
+                    }
+
+                }
+                
+                var connection = new WebSocket('ws://localhost:3000');
+
+                connection.onopen = function(e) {
+
+                    let headers = new Headers();
+
+                    headers.append('Access-Control-Allow-Origin', 'http://localhost:3000');
+
+                    $.ajax({
+                        type: 'GET',
+                        headers: headers,
+                        url: 'http://localhost:3000/history',
+                        success: function(ans) {
+                            console.log(1);
+                            var incomingHistory = JSON.parse(ans);
+                            for (var j=0; incomingHistory.data.length>j; j++) {
+                                addMessage(incomingHistory.data[j].author, incomingHistory.data[j].text);                                
+                            }
+                        },                        
+                        error: function(ans, status, error) {
+                            var errorMessage = ans.status + ': ' + ans.statusText
+                            alert('Error - ' + errorMessage);
+                        }
+                    })
+
+                }
+
+                connection.onmessage = function(message){
+                    var incomingMsg = JSON.parse(message.data);
+                    addMessage(incomingMsg.data.author, incomingMsg.data.text);
+                }
+
+                btnSubmit.addEventListener("click", () => { // первый ввод - username
+                    var msg = input.value;
+                    if (!msg) {
+                        return;
+                    }
+                    connection.send(msg);
+                    input.value = '';
+
+                })
+
+                function addMessage(author, message) { // функция вывода
+                    chat.innerHTML += '<div class="msg">' + author + ": " + message + '</div>'
+                }
+
+            };
+
+    </script>
+</body>
+</html>
